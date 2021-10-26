@@ -21,7 +21,7 @@
 	},
 	"resources": [
 		{
-			"name": "[concat(parameters('factoryName'), '/dataflow1')]",
+			"name": "[concat(parameters('factoryName'), '/Merge Projects and Leads')]",
 			"type": "Microsoft.DataFactory/factories/dataflows",
 			"apiVersion": "2018-06-01",
 			"properties": {
@@ -57,7 +57,7 @@
 							"name": "mergedProjectLeads"
 						}
 					],
-					"script": "source(output(\n\t\tID as string,\n\t\tProject as string\n\t),\n\tallowSchemaDrift: true,\n\tvalidateSchema: false,\n\tignoreNoFilesFound: false) ~> inputProjects\nsource(output(\n\t\tID as string,\n\t\tLead as string\n\t),\n\tallowSchemaDrift: true,\n\tvalidateSchema: false,\n\tignoreNoFilesFound: false) ~> inputLeads\ninputProjects, inputLeads join(inputProjects@ID == inputLeads@ID,\n\tjoinType:'inner',\n\tbroadcast: 'auto')~> mergedProjectLeads\nmergedProjectLeads sink(allowSchemaDrift: true,\n\tvalidateSchema: false,\n\tinput(\n\t\tPR_ID as integer,\n\t\tPR_Name as string,\n\t\tPR_Lead as string\n\t),\n\tdeletable:false,\n\tinsertable:true,\n\tupdateable:false,\n\tupsertable:false,\n\tformat: 'table',\n\tskipDuplicateMapInputs: true,\n\tskipDuplicateMapOutputs: true,\n\terrorHandlingOption: 'stopOnFirstError') ~> outputProjectLeads"
+					"script": "source(output(\n\t\tID as integer,\n\t\tProject as string\n\t),\n\tallowSchemaDrift: true,\n\tvalidateSchema: false,\n\tignoreNoFilesFound: false) ~> inputProjects\nsource(output(\n\t\tID as integer,\n\t\tLead as string\n\t),\n\tallowSchemaDrift: true,\n\tvalidateSchema: false,\n\tignoreNoFilesFound: false) ~> inputLeads\ninputProjects, inputLeads join(inputProjects@ID == inputLeads@ID,\n\tjoinType:'inner',\n\tbroadcast: 'auto')~> mergedProjectLeads\nmergedProjectLeads sink(allowSchemaDrift: true,\n\tvalidateSchema: false,\n\tinput(\n\t\tPR_ID as integer,\n\t\tPR_Name as string,\n\t\tPR_Lead as string\n\t),\n\tdeletable:false,\n\tinsertable:true,\n\tupdateable:false,\n\tupsertable:false,\n\tformat: 'table',\n\tskipDuplicateMapInputs: true,\n\tskipDuplicateMapOutputs: true,\n\terrorHandlingOption: 'stopOnFirstError',\n\tmapColumn(\n\t\tPR_ID = inputProjects@ID,\n\t\tPR_Name = Project,\n\t\tPR_Lead = Lead\n\t)) ~> outputProjectLeads"
 				}
 			},
 			"dependsOn": [
@@ -193,6 +193,54 @@
 			},
 			"dependsOn": [
 				"[concat(variables('factoryId'), '/linkedServices/Output SQL Database')]"
+			]
+		},
+		{
+			"name": "[concat(parameters('factoryName'), '/Merge Projects and Leads')]",
+			"type": "Microsoft.DataFactory/factories/pipelines",
+			"apiVersion": "2018-06-01",
+			"properties": {
+				"activities": [
+					{
+						"name": "Merge Projects and Leads Flow",
+						"type": "ExecuteDataFlow",
+						"dependsOn": [],
+						"policy": {
+							"timeout": "1.00:00:00",
+							"retry": 0,
+							"retryIntervalInSeconds": 30,
+							"secureOutput": false,
+							"secureInput": false
+						},
+						"userProperties": [],
+						"typeProperties": {
+							"dataflow": {
+								"referenceName": "Merge Projects and Leads",
+								"type": "DataFlowReference",
+								"parameters": {},
+								"datasetParameters": {
+									"inputProjects": {},
+									"inputLeads": {},
+									"outputProjectLeads": {}
+								}
+							},
+							"staging": {},
+							"compute": {
+								"coreCount": 8,
+								"computeType": "General"
+							},
+							"traceLevel": "Fine"
+						}
+					}
+				],
+				"policy": {
+					"elapsedTimeMetric": {},
+					"cancelAfter": {}
+				},
+				"annotations": []
+			},
+			"dependsOn": [
+				"[concat(variables('factoryId'), '/dataflows/Merge Projects and Leads')]"
 			]
 		}
 	]
