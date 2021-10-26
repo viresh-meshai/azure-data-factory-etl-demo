@@ -22,95 +22,51 @@
 	"resources": [
 		{
 			"name": "[concat(parameters('factoryName'), '/Merge Projects and Leads')]",
-			"type": "Microsoft.DataFactory/factories/dataflows",
+			"type": "Microsoft.DataFactory/factories/pipelines",
 			"apiVersion": "2018-06-01",
 			"properties": {
-				"type": "MappingDataFlow",
-				"typeProperties": {
-					"sources": [
-						{
-							"dataset": {
-								"referenceName": "input_projects",
-								"type": "DatasetReference"
-							},
-							"name": "inputProjects"
+				"activities": [
+					{
+						"name": "Merge Projects and Leads Flow",
+						"type": "ExecuteDataFlow",
+						"dependsOn": [],
+						"policy": {
+							"timeout": "1.00:00:00",
+							"retry": 0,
+							"retryIntervalInSeconds": 30,
+							"secureOutput": false,
+							"secureInput": false
 						},
-						{
-							"dataset": {
-								"referenceName": "input_leads",
-								"type": "DatasetReference"
+						"userProperties": [],
+						"typeProperties": {
+							"dataflow": {
+								"referenceName": "Merge Projects and Leads",
+								"type": "DataFlowReference",
+								"parameters": {},
+								"datasetParameters": {
+									"inputProjects": {},
+									"inputLeads": {},
+									"inputExpenses": {},
+									"outputProjectLeads": {}
+								}
 							},
-							"name": "inputLeads"
-						}
-					],
-					"sinks": [
-						{
-							"dataset": {
-								"referenceName": "output_project_leads",
-								"type": "DatasetReference"
+							"staging": {},
+							"compute": {
+								"coreCount": 8,
+								"computeType": "General"
 							},
-							"name": "outputProjectLeads"
+							"traceLevel": "Fine"
 						}
-					],
-					"transformations": [
-						{
-							"name": "mergedProjectLeads"
-						}
-					],
-					"script": "source(output(\n\t\tID as integer,\n\t\tProject as string\n\t),\n\tallowSchemaDrift: true,\n\tvalidateSchema: false,\n\tignoreNoFilesFound: false) ~> inputProjects\nsource(output(\n\t\tID as integer,\n\t\tLead as string\n\t),\n\tallowSchemaDrift: true,\n\tvalidateSchema: false,\n\tignoreNoFilesFound: false) ~> inputLeads\ninputProjects, inputLeads join(inputProjects@ID == inputLeads@ID,\n\tjoinType:'inner',\n\tbroadcast: 'auto')~> mergedProjectLeads\nmergedProjectLeads sink(allowSchemaDrift: true,\n\tvalidateSchema: false,\n\tinput(\n\t\tPR_ID as integer,\n\t\tPR_Name as string,\n\t\tPR_Lead as string\n\t),\n\tdeletable:false,\n\tinsertable:true,\n\tupdateable:false,\n\tupsertable:false,\n\tformat: 'table',\n\tskipDuplicateMapInputs: true,\n\tskipDuplicateMapOutputs: true,\n\terrorHandlingOption: 'stopOnFirstError',\n\tmapColumn(\n\t\tPR_ID = inputProjects@ID,\n\t\tPR_Name = Project,\n\t\tPR_Lead = Lead\n\t)) ~> outputProjectLeads"
-				}
-			},
-			"dependsOn": [
-				"[concat(variables('factoryId'), '/datasets/input_projects')]",
-				"[concat(variables('factoryId'), '/datasets/input_leads')]",
-				"[concat(variables('factoryId'), '/datasets/output_project_leads')]"
-			]
-		},
-		{
-			"name": "[concat(parameters('factoryName'), '/Input Blob Storage')]",
-			"type": "Microsoft.DataFactory/factories/linkedServices",
-			"apiVersion": "2018-06-01",
-			"properties": {
-				"annotations": [],
-				"type": "AzureBlobStorage",
-				"typeProperties": {
-					"connectionString": "[parameters('Input Blob Storage_connectionString')]"
-				}
-			},
-			"dependsOn": []
-		},
-		{
-			"name": "[concat(parameters('factoryName'), '/input_projects')]",
-			"type": "Microsoft.DataFactory/factories/datasets",
-			"apiVersion": "2018-06-01",
-			"properties": {
-				"linkedServiceName": {
-					"referenceName": "Input Blob Storage",
-					"type": "LinkedServiceReference"
-				},
-				"annotations": [],
-				"type": "DelimitedText",
-				"typeProperties": {
-					"location": {
-						"type": "AzureBlobStorageLocation",
-						"fileName": "Tab_Projekte.csv",
-						"container": "etl-demo"
-					},
-					"columnDelimiter": ",",
-					"escapeChar": "\\",
-					"quoteChar": "\""
-				},
-				"schema": [
-					{
-						"type": "String"
-					},
-					{
-						"type": "String"
 					}
-				]
+				],
+				"policy": {
+					"elapsedTimeMetric": {},
+					"cancelAfter": {}
+				},
+				"annotations": []
 			},
 			"dependsOn": [
-				"[concat(variables('factoryId'), '/linkedServices/Input Blob Storage')]"
+				"[concat(variables('factoryId'), '/dataflows/Merge Projects and Leads')]"
 			]
 		},
 		{
@@ -148,17 +104,38 @@
 			]
 		},
 		{
-			"name": "[concat(parameters('factoryName'), '/Output SQL Database')]",
-			"type": "Microsoft.DataFactory/factories/linkedServices",
+			"name": "[concat(parameters('factoryName'), '/input_projects')]",
+			"type": "Microsoft.DataFactory/factories/datasets",
 			"apiVersion": "2018-06-01",
 			"properties": {
+				"linkedServiceName": {
+					"referenceName": "Input Blob Storage",
+					"type": "LinkedServiceReference"
+				},
 				"annotations": [],
-				"type": "AzureSqlDatabase",
+				"type": "DelimitedText",
 				"typeProperties": {
-					"connectionString": "[parameters('Output SQL Database_connectionString')]"
-				}
+					"location": {
+						"type": "AzureBlobStorageLocation",
+						"fileName": "Tab_Projekte.csv",
+						"container": "etl-demo"
+					},
+					"columnDelimiter": ",",
+					"escapeChar": "\\",
+					"quoteChar": "\""
+				},
+				"schema": [
+					{
+						"type": "String"
+					},
+					{
+						"type": "String"
+					}
+				]
 			},
-			"dependsOn": []
+			"dependsOn": [
+				"[concat(variables('factoryId'), '/linkedServices/Input Blob Storage')]"
+			]
 		},
 		{
 			"name": "[concat(parameters('factoryName'), '/output_project_leads')]",
@@ -196,51 +173,123 @@
 			]
 		},
 		{
-			"name": "[concat(parameters('factoryName'), '/Merge Projects and Leads')]",
-			"type": "Microsoft.DataFactory/factories/pipelines",
+			"name": "[concat(parameters('factoryName'), '/Input Blob Storage')]",
+			"type": "Microsoft.DataFactory/factories/linkedServices",
 			"apiVersion": "2018-06-01",
 			"properties": {
-				"activities": [
-					{
-						"name": "Merge Projects and Leads Flow",
-						"type": "ExecuteDataFlow",
-						"dependsOn": [],
-						"policy": {
-							"timeout": "1.00:00:00",
-							"retry": 0,
-							"retryIntervalInSeconds": 30,
-							"secureOutput": false,
-							"secureInput": false
+				"annotations": [],
+				"type": "AzureBlobStorage",
+				"typeProperties": {
+					"connectionString": "[parameters('Input Blob Storage_connectionString')]"
+				}
+			},
+			"dependsOn": []
+		},
+		{
+			"name": "[concat(parameters('factoryName'), '/Output SQL Database')]",
+			"type": "Microsoft.DataFactory/factories/linkedServices",
+			"apiVersion": "2018-06-01",
+			"properties": {
+				"annotations": [],
+				"type": "AzureSqlDatabase",
+				"typeProperties": {
+					"connectionString": "[parameters('Output SQL Database_connectionString')]"
+				}
+			},
+			"dependsOn": []
+		},
+		{
+			"name": "[concat(parameters('factoryName'), '/Merge Projects and Leads')]",
+			"type": "Microsoft.DataFactory/factories/dataflows",
+			"apiVersion": "2018-06-01",
+			"properties": {
+				"type": "MappingDataFlow",
+				"typeProperties": {
+					"sources": [
+						{
+							"dataset": {
+								"referenceName": "input_projects",
+								"type": "DatasetReference"
+							},
+							"name": "inputProjects"
 						},
-						"userProperties": [],
-						"typeProperties": {
-							"dataflow": {
-								"referenceName": "Merge Projects and Leads",
-								"type": "DataFlowReference",
-								"parameters": {},
-								"datasetParameters": {
-									"inputProjects": {},
-									"inputLeads": {},
-									"outputProjectLeads": {}
-								}
+						{
+							"dataset": {
+								"referenceName": "input_leads",
+								"type": "DatasetReference"
 							},
-							"staging": {},
-							"compute": {
-								"coreCount": 8,
-								"computeType": "General"
+							"name": "inputLeads"
+						},
+						{
+							"dataset": {
+								"referenceName": "inputExpenses",
+								"type": "DatasetReference"
 							},
-							"traceLevel": "Fine"
+							"name": "inputExpenses"
 						}
-					}
-				],
-				"policy": {
-					"elapsedTimeMetric": {},
-					"cancelAfter": {}
-				},
-				"annotations": []
+					],
+					"sinks": [
+						{
+							"dataset": {
+								"referenceName": "output_project_leads",
+								"type": "DatasetReference"
+							},
+							"name": "outputProjectLeads"
+						}
+					],
+					"transformations": [
+						{
+							"name": "mergedProjectLeads"
+						},
+						{
+							"name": "sumOfExpenses"
+						},
+						{
+							"name": "mergedProjectLeadsExpenses"
+						}
+					],
+					"script": "source(output(\n\t\tID as integer,\n\t\tProject as string\n\t),\n\tallowSchemaDrift: true,\n\tvalidateSchema: false,\n\tignoreNoFilesFound: false) ~> inputProjects\nsource(output(\n\t\tID as integer,\n\t\tLead as string\n\t),\n\tallowSchemaDrift: true,\n\tvalidateSchema: false,\n\tignoreNoFilesFound: false) ~> inputLeads\nsource(output(\n\t\tID as integer,\n\t\tAmount as double\n\t),\n\tallowSchemaDrift: true,\n\tvalidateSchema: false,\n\tignoreNoFilesFound: false) ~> inputExpenses\ninputProjects, inputLeads join(inputProjects@ID == inputLeads@ID,\n\tjoinType:'inner',\n\tbroadcast: 'auto')~> mergedProjectLeads\ninputExpenses aggregate(groupBy(ID),\n\tEXPENSE = sum(Amount)) ~> sumOfExpenses\nmergedProjectLeads, sumOfExpenses join(inputProjects@ID == sumOfExpenses@ID,\n\tjoinType:'inner',\n\tbroadcast: 'auto')~> mergedProjectLeadsExpenses\nmergedProjectLeadsExpenses sink(allowSchemaDrift: true,\n\tvalidateSchema: false,\n\tinput(\n\t\tPR_ID as integer,\n\t\tPR_Name as string,\n\t\tPR_Lead as string\n\t),\n\tdeletable:false,\n\tinsertable:true,\n\tupdateable:false,\n\tupsertable:false,\n\tformat: 'table',\n\tskipDuplicateMapInputs: true,\n\tskipDuplicateMapOutputs: true,\n\terrorHandlingOption: 'stopOnFirstError',\n\tmapColumn(\n\t\tPR_ID = inputProjects@ID,\n\t\tPR_Name = Project,\n\t\tPR_Lead = Lead\n\t)) ~> outputProjectLeads"
+				}
 			},
 			"dependsOn": [
-				"[concat(variables('factoryId'), '/dataflows/Merge Projects and Leads')]"
+				"[concat(variables('factoryId'), '/datasets/input_projects')]",
+				"[concat(variables('factoryId'), '/datasets/input_leads')]",
+				"[concat(variables('factoryId'), '/datasets/inputExpenses')]",
+				"[concat(variables('factoryId'), '/datasets/output_project_leads')]"
+			]
+		},
+		{
+			"name": "[concat(parameters('factoryName'), '/inputExpenses')]",
+			"type": "Microsoft.DataFactory/factories/datasets",
+			"apiVersion": "2018-06-01",
+			"properties": {
+				"linkedServiceName": {
+					"referenceName": "Input Blob Storage",
+					"type": "LinkedServiceReference"
+				},
+				"annotations": [],
+				"type": "DelimitedText",
+				"typeProperties": {
+					"location": {
+						"type": "AzureBlobStorageLocation",
+						"fileName": "Tab_Expenses.csv",
+						"container": "etl-demo"
+					},
+					"columnDelimiter": ",",
+					"escapeChar": "\\",
+					"quoteChar": "\""
+				},
+				"schema": [
+					{
+						"type": "String"
+					},
+					{
+						"type": "String"
+					}
+				]
+			},
+			"dependsOn": [
+				"[concat(variables('factoryId'), '/linkedServices/Input Blob Storage')]"
 			]
 		}
 	]
