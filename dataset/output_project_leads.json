@@ -25,6 +25,16 @@
 				"name": "EXPENSES",
 				"type": "float",
 				"precision": 15
+			},
+			{
+				"name": "LATITUDE",
+				"type": "float",
+				"precision": 15
+			},
+			{
+				"name": "LONGITUDE",
+				"type": "float",
+				"precision": 15
 			}
 		],
 		"typeProperties": {
