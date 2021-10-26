@@ -1,0 +1,9 @@
+{
+	"name": "etl-demo",
+	"location": "westeurope",
+	"identity": {
+		"type": "SystemAssigned",
+		"principalId": "43bb9681-d092-4d35-a1be-2f618cf2da44",
+		"tenantId": "e0793d39-0939-496d-b129-198edd916feb"
+	}
+}
