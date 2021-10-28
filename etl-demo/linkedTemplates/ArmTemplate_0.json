@@ -81,6 +81,43 @@
 			]
 		},
 		{
+			"name": "[concat(parameters('factoryName'), '/inputGeoData')]",
+			"type": "Microsoft.DataFactory/factories/datasets",
+			"apiVersion": "2018-06-01",
+			"properties": {
+				"linkedServiceName": {
+					"referenceName": "Input Blob Storage",
+					"type": "LinkedServiceReference"
+				},
+				"annotations": [],
+				"type": "DelimitedText",
+				"typeProperties": {
+					"location": {
+						"type": "AzureBlobStorageLocation",
+						"fileName": "Tab_Geo_Data.csv",
+						"container": "etl-demo"
+					},
+					"columnDelimiter": ",",
+					"escapeChar": "\\",
+					"quoteChar": "\""
+				},
+				"schema": [
+					{
+						"type": "String"
+					},
+					{
+						"type": "String"
+					},
+					{
+						"type": "String"
+					}
+				]
+			},
+			"dependsOn": [
+				"[concat(variables('factoryId'), '/linkedServices/Input Blob Storage')]"
+			]
+		},
+		{
 			"name": "[concat(parameters('factoryName'), '/input_leads')]",
 			"type": "Microsoft.DataFactory/factories/datasets",
 			"apiVersion": "2018-06-01",
@@ -199,44 +236,7 @@
 			]
 		},
 		{
-			"name": "[concat(parameters('factoryName'), '/inputGeoData')]",
-			"type": "Microsoft.DataFactory/factories/datasets",
-			"apiVersion": "2018-06-01",
-			"properties": {
-				"linkedServiceName": {
-					"referenceName": "Input Blob Storage",
-					"type": "LinkedServiceReference"
-				},
-				"annotations": [],
-				"type": "DelimitedText",
-				"typeProperties": {
-					"location": {
-						"type": "AzureBlobStorageLocation",
-						"fileName": "Tab_Geo_Data.csv",
-						"container": "etl-demo"
-					},
-					"columnDelimiter": ",",
-					"escapeChar": "\\",
-					"quoteChar": "\""
-				},
-				"schema": [
-					{
-						"type": "String"
-					},
-					{
-						"type": "String"
-					},
-					{
-						"type": "String"
-					}
-				]
-			},
-			"dependsOn": [
-				"[concat(variables('factoryId'), '/linkedServices/Input Blob Storage')]"
-			]
-		},
-		{
-			"name": "[concat(parameters('factoryName'), '/Merge Projects and Leads')]",
+			"name": "[concat(parameters('factoryName'), '/Project Data CSV to SQL')]",
 			"type": "Microsoft.DataFactory/factories/dataflows",
 			"apiVersion": "2018-06-01",
 			"properties": {
@@ -307,13 +307,90 @@
 			]
 		},
 		{
+			"name": "[concat(parameters('factoryName'), '/Delete SQL data')]",
+			"type": "Microsoft.DataFactory/factories/dataflows",
+			"apiVersion": "2018-06-01",
+			"properties": {
+				"type": "MappingDataFlow",
+				"typeProperties": {
+					"sources": [
+						{
+							"dataset": {
+								"referenceName": "output_project_leads",
+								"type": "DatasetReference"
+							},
+							"name": "ExistingEentries"
+						}
+					],
+					"sinks": [
+						{
+							"dataset": {
+								"referenceName": "output_project_leads",
+								"type": "DatasetReference"
+							},
+							"name": "ClearDatabase"
+						}
+					],
+					"transformations": [
+						{
+							"name": "DeleteEntries"
+						}
+					],
+					"script": "source(output(\n\t\tPR_ID as integer,\n\t\tPR_Name as string,\n\t\tPR_Lead as string,\n\t\tEXPENSES as double,\n\t\tLATITUDE as double,\n\t\tLONGITUDE as double\n\t),\n\tallowSchemaDrift: true,\n\tvalidateSchema: false,\n\tisolationLevel: 'READ_UNCOMMITTED',\n\tformat: 'table') ~> ExistingEentries\nExistingEentries alterRow(deleteIf(true())) ~> DeleteEntries\nDeleteEntries sink(allowSchemaDrift: true,\n\tvalidateSchema: false,\n\tinput(\n\t\tPR_ID as integer,\n\t\tPR_Name as string,\n\t\tPR_Lead as string,\n\t\tEXPENSES as double,\n\t\tLATITUDE as double,\n\t\tLONGITUDE as double\n\t),\n\tdeletable:false,\n\tinsertable:true,\n\tupdateable:false,\n\tupsertable:false,\n\tformat: 'table',\n\tskipDuplicateMapInputs: true,\n\tskipDuplicateMapOutputs: true,\n\terrorHandlingOption: 'stopOnFirstError') ~> ClearDatabase"
+				}
+			},
+			"dependsOn": [
+				"[concat(variables('factoryId'), '/datasets/output_project_leads')]"
+			]
+		},
+		{
 			"name": "[concat(parameters('factoryName'), '/Merge Projects and Leads')]",
 			"type": "Microsoft.DataFactory/factories/pipelines",
 			"apiVersion": "2018-06-01",
 			"properties": {
 				"activities": [
 					{
-						"name": "Merge Projects and Leads Flow",
+						"name": "Project CSV to SQL",
+						"type": "ExecuteDataFlow",
+						"dependsOn": [
+							{
+								"activity": "Delete SQL data",
+								"dependencyConditions": [
+									"Succeeded"
+								]
+							}
+						],
+						"policy": {
+							"timeout": "1.00:00:00",
+							"retry": 0,
+							"retryIntervalInSeconds": 30,
+							"secureOutput": false,
+							"secureInput": false
+						},
+						"userProperties": [],
+						"typeProperties": {
+							"dataflow": {
+								"referenceName": "Project Data CSV to SQL",
+								"type": "DataFlowReference",
+								"parameters": {},
+								"datasetParameters": {
+									"inputProjects": {},
+									"inputLeads": {},
+									"inputExpenses": {},
+									"inputGeoData": {},
+									"outputProjectLeads": {}
+								}
+							},
+							"staging": {},
+							"compute": {
+								"coreCount": 8,
+								"computeType": "General"
+							},
+							"traceLevel": "Fine"
+						}
+					},
+					{
+						"name": "Delete SQL data",
 						"type": "ExecuteDataFlow",
 						"dependsOn": [],
 						"policy": {
@@ -326,15 +403,12 @@
 						"userProperties": [],
 						"typeProperties": {
 							"dataflow": {
-								"referenceName": "Merge Projects and Leads",
+								"referenceName": "Delete SQL data",
 								"type": "DataFlowReference",
 								"parameters": {},
 								"datasetParameters": {
-									"inputProjects": {},
-									"inputLeads": {},
-									"inputExpenses": {},
-									"inputGeoData": {},
-									"outputProjectLeads": {}
+									"ExistingEentries": {},
+									"ClearDatabase": {}
 								}
 							},
 							"staging": {},
@@ -353,7 +427,8 @@
 				"annotations": []
 			},
 			"dependsOn": [
-				"[concat(variables('factoryId'), '/dataflows/Merge Projects and Leads')]"
+				"[concat(variables('factoryId'), '/dataflows/Project Data CSV to SQL')]",
+				"[concat(variables('factoryId'), '/dataflows/Delete SQL data')]"
 			]
 		}
 	]
