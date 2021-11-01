@@ -311,10 +311,10 @@
 						"timeZone": "W. Europe Standard Time",
 						"schedule": {
 							"minutes": [
-								0
+								10
 							],
 							"hours": [
-								14
+								15
 							]
 						}
 					}
