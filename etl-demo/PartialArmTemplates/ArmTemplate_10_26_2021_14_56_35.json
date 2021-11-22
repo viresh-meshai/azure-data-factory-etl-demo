@@ -1,0 +1,111 @@
+{
+	"$schema": "http://schema.management.azure.com/schemas/2015-01-01/deploymentTemplate.json#",
+	"contentVersion": "1.0.0.0",
+	"parameters": {
+		"factoryName": {
+			"type": "string",
+			"metadata": "Data Factory name",
+			"defaultValue": "etl-demo"
+		}
+	},
+	"variables": {
+		"factoryId": "[concat('Microsoft.DataFactory/factories/', parameters('factoryName'))]"
+	},
+	"resources": [
+		{
+			"name": "[concat(parameters('factoryName'), '/output_project_leads')]",
+			"type": "Microsoft.DataFactory/factories/datasets",
+			"apiVersion": "2018-06-01",
+			"properties": {
+				"linkedServiceName": {
+					"referenceName": "Output SQL Database",
+					"type": "LinkedServiceReference"
+				},
+				"annotations": [],
+				"type": "AzureSqlTable",
+				"schema": [
+					{
+						"name": "PR_ID",
+						"type": "int",
+						"precision": 10
+					},
+					{
+						"name": "PR_Name",
+						"type": "varchar"
+					},
+					{
+						"name": "PR_Lead",
+						"type": "varchar"
+					},
+					{
+						"name": "EXPENSES",
+						"type": "float",
+						"precision": 15
+					}
+				],
+				"typeProperties": {
+					"schema": "dbo",
+					"table": "Projects"
+				}
+			},
+			"dependsOn": []
+		},
+		{
+			"name": "[concat(parameters('factoryName'), '/Merge Projects and Leads')]",
+			"type": "Microsoft.DataFactory/factories/dataflows",
+			"apiVersion": "2018-06-01",
+			"properties": {
+				"type": "MappingDataFlow",
+				"typeProperties": {
+					"sources": [
+						{
+							"dataset": {
+								"referenceName": "input_projects",
+								"type": "DatasetReference"
+							},
+							"name": "inputProjects"
+						},
+						{
+							"dataset": {
+								"referenceName": "input_leads",
+								"type": "DatasetReference"
+							},
+							"name": "inputLeads"
+						},
+						{
+							"dataset": {
+								"referenceName": "inputExpenses",
+								"type": "DatasetReference"
+							},
+							"name": "inputExpenses"
+						}
+					],
+					"sinks": [
+						{
+							"dataset": {
+								"referenceName": "output_project_leads",
+								"type": "DatasetReference"
+							},
+							"name": "outputProjectLeads"
+						}
+					],
+					"transformations": [
+						{
+							"name": "mergedProjectLeads"
+						},
+						{
+							"name": "sumOfExpenses"
+						},
+						{
+							"name": "mergedProjectLeadsExpenses"
+						}
+					],
+					"script": "source(output(\n\t\tID as integer,\n\t\tProject as string\n\t),\n\tallowSchemaDrift: true,\n\tvalidateSchema: false,\n\tignoreNoFilesFound: false) ~> inputProjects\nsource(output(\n\t\tID as integer,\n\t\tLead as string\n\t),\n\tallowSchemaDrift: true,\n\tvalidateSchema: false,\n\tignoreNoFilesFound: false) ~> inputLeads\nsource(output(\n\t\tID as integer,\n\t\tAmount as double\n\t),\n\tallowSchemaDrift: true,\n\tvalidateSchema: false,\n\tignoreNoFilesFound: false) ~> inputExpenses\ninputProjects, inputLeads join(inputProjects@ID == inputLeads@ID,\n\tjoinType:'inner',\n\tbroadcast: 'auto')~> mergedProjectLeads\ninputExpenses aggregate(groupBy(ID),\n\tEXPENSE = sum(Amount)) ~> sumOfExpenses\nmergedProjectLeads, sumOfExpenses join(inputProjects@ID == sumOfExpenses@ID,\n\tjoinType:'inner',\n\tbroadcast: 'auto')~> mergedProjectLeadsExpenses\nmergedProjectLeadsExpenses sink(allowSchemaDrift: true,\n\tvalidateSchema: false,\n\tinput(\n\t\tPR_ID as integer,\n\t\tPR_Name as string,\n\t\tPR_Lead as string,\n\t\tEXPENSES as double\n\t),\n\tdeletable:false,\n\tinsertable:true,\n\tupdateable:false,\n\tupsertable:false,\n\tformat: 'table',\n\tskipDuplicateMapInputs: true,\n\tskipDuplicateMapOutputs: true,\n\terrorHandlingOption: 'stopOnFirstError',\n\tmapColumn(\n\t\tPR_ID = inputProjects@ID,\n\t\tPR_Name = Project,\n\t\tPR_Lead = Lead,\n\t\tEXPENSES = sumOfExpenses@ID\n\t)) ~> outputProjectLeads"
+				}
+			},
+			"dependsOn": [
+				"[concat(variables('factoryId'), '/datasets/output_project_leads')]"
+			]
+		}
+	]
+}

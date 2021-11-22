@@ -1,0 +1,118 @@
+{
+	"$schema": "http://schema.management.azure.com/schemas/2015-01-01/deploymentTemplate.json#",
+	"contentVersion": "1.0.0.0",
+	"parameters": {
+		"factoryName": {
+			"type": "string",
+			"metadata": "Data Factory name",
+			"defaultValue": "etl-demo"
+		}
+	},
+	"variables": {
+		"factoryId": "[concat('Microsoft.DataFactory/factories/', parameters('factoryName'))]"
+	},
+	"resources": [
+		{
+			"name": "[concat(parameters('factoryName'), '/Ingest Project Data')]",
+			"type": "Microsoft.DataFactory/factories/pipelines",
+			"apiVersion": "2018-06-01",
+			"properties": {
+				"activities": [
+					{
+						"name": "Project CSV to SQL",
+						"type": "ExecuteDataFlow",
+						"dependsOn": [],
+						"policy": {
+							"timeout": "1.00:00:00",
+							"retry": 0,
+							"retryIntervalInSeconds": 30,
+							"secureOutput": false,
+							"secureInput": false
+						},
+						"userProperties": [],
+						"typeProperties": {
+							"dataflow": {
+								"referenceName": "Project Data CSV to SQL",
+								"type": "DataFlowReference"
+							},
+							"compute": {
+								"coreCount": 8,
+								"computeType": "General"
+							},
+							"traceLevel": "Fine"
+						}
+					}
+				],
+				"annotations": []
+			},
+			"dependsOn": [
+				"[concat(variables('factoryId'), '/dataflows/Project Data CSV to SQL')]"
+			]
+		},
+		{
+			"name": "[concat(parameters('factoryName'), '/Project Data CSV to SQL')]",
+			"type": "Microsoft.DataFactory/factories/dataflows",
+			"apiVersion": "2018-06-01",
+			"properties": {
+				"type": "MappingDataFlow",
+				"typeProperties": {
+					"sources": [
+						{
+							"dataset": {
+								"referenceName": "input_projects",
+								"type": "DatasetReference"
+							},
+							"name": "inputProjects"
+						},
+						{
+							"dataset": {
+								"referenceName": "input_leads",
+								"type": "DatasetReference"
+							},
+							"name": "inputLeads"
+						},
+						{
+							"dataset": {
+								"referenceName": "inputExpenses",
+								"type": "DatasetReference"
+							},
+							"name": "inputExpenses"
+						},
+						{
+							"dataset": {
+								"referenceName": "inputGeoData",
+								"type": "DatasetReference"
+							},
+							"name": "inputGeoData"
+						}
+					],
+					"sinks": [
+						{
+							"dataset": {
+								"referenceName": "output_project_leads",
+								"type": "DatasetReference"
+							},
+							"name": "outputProjectLeads"
+						}
+					],
+					"transformations": [
+						{
+							"name": "mergedProjectLeads"
+						},
+						{
+							"name": "sumOfExpenses"
+						},
+						{
+							"name": "mergedProjectLeadsExpenses"
+						},
+						{
+							"name": "mergedProjectsGeoData"
+						}
+					],
+					"script": "source(output(\n\t\tID as integer,\n\t\tProject as string\n\t),\n\tallowSchemaDrift: true,\n\tvalidateSchema: false,\n\tignoreNoFilesFound: false) ~> inputProjects\nsource(output(\n\t\tID as integer,\n\t\tLead as string\n\t),\n\tallowSchemaDrift: true,\n\tvalidateSchema: false,\n\tignoreNoFilesFound: false) ~> inputLeads\nsource(output(\n\t\tID as integer,\n\t\tAmount as double\n\t),\n\tallowSchemaDrift: true,\n\tvalidateSchema: false,\n\tignoreNoFilesFound: false) ~> inputExpenses\nsource(output(\n\t\tID as integer,\n\t\tLatitude as float,\n\t\tLongitude as float\n\t),\n\tallowSchemaDrift: true,\n\tvalidateSchema: false,\n\tignoreNoFilesFound: false) ~> inputGeoData\ninputProjects, inputLeads join(inputProjects@ID == inputLeads@ID,\n\tjoinType:'inner',\n\tbroadcast: 'auto')~> mergedProjectLeads\ninputExpenses aggregate(groupBy(ID),\n\tEXPENSE = sum(Amount)) ~> sumOfExpenses\nmergedProjectLeads, sumOfExpenses join(inputLeads@ID == sumOfExpenses@ID,\n\tjoinType:'inner',\n\tbroadcast: 'auto')~> mergedProjectLeadsExpenses\nmergedProjectLeadsExpenses, inputGeoData join(inputProjects@ID == inputGeoData@ID,\n\tjoinType:'inner',\n\tbroadcast: 'auto')~> mergedProjectsGeoData\nmergedProjectsGeoData sink(allowSchemaDrift: true,\n\tvalidateSchema: false,\n\tinput(\n\t\tPR_ID as integer,\n\t\tPR_Name as string,\n\t\tPR_Lead as string,\n\t\tEXPENSES as double,\n\t\tLATITUDE as double,\n\t\tLONGITUDE as double\n\t),\n\tdeletable:false,\n\tinsertable:true,\n\tupdateable:false,\n\tupsertable:false,\n\ttruncate:true,\n\tformat: 'table',\n\tskipDuplicateMapInputs: true,\n\tskipDuplicateMapOutputs: true,\n\terrorHandlingOption: 'stopOnFirstError',\n\tmapColumn(\n\t\tPR_ID = inputProjects@ID,\n\t\tPR_Name = Project,\n\t\tPR_Lead = Lead,\n\t\tEXPENSES = EXPENSE,\n\t\tLATITUDE = Latitude,\n\t\tLONGITUDE = Longitude\n\t)) ~> outputProjectLeads"
+				}
+			},
+			"dependsOn": []
+		}
+	]
+}
