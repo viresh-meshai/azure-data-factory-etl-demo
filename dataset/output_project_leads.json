@@ -1,0 +1,45 @@
+{
+	"name": "output_project_leads",
+	"properties": {
+		"linkedServiceName": {
+			"referenceName": "Output SQL Database",
+			"type": "LinkedServiceReference"
+		},
+		"annotations": [],
+		"type": "AzureSqlTable",
+		"schema": [
+			{
+				"name": "PR_ID",
+				"type": "int",
+				"precision": 10
+			},
+			{
+				"name": "PR_Name",
+				"type": "varchar"
+			},
+			{
+				"name": "PR_Lead",
+				"type": "varchar"
+			},
+			{
+				"name": "EXPENSES",
+				"type": "float",
+				"precision": 15
+			},
+			{
+				"name": "LATITUDE",
+				"type": "float",
+				"precision": 15
+			},
+			{
+				"name": "LONGITUDE",
+				"type": "float",
+				"precision": 15
+			}
+		],
+		"typeProperties": {
+			"schema": "dbo",
+			"table": "Projects"
+		}
+	}
+}

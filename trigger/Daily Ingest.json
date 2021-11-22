@@ -1,0 +1,33 @@
+{
+	"name": "Daily Ingest",
+	"properties": {
+		"annotations": [],
+		"runtimeState": "Started",
+		"pipelines": [
+			{
+				"pipelineReference": {
+					"referenceName": "Ingest Project Data",
+					"type": "PipelineReference"
+				}
+			}
+		],
+		"type": "ScheduleTrigger",
+		"typeProperties": {
+			"recurrence": {
+				"frequency": "Day",
+				"interval": 1,
+				"startTime": "2021-11-01T13:00:00",
+				"endTime": "2021-11-02T10:14:00",
+				"timeZone": "W. Europe Standard Time",
+				"schedule": {
+					"minutes": [
+						45
+					],
+					"hours": [
+						15
+					]
+				}
+			}
+		}
+	}
+}
