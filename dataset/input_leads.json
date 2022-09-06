@@ -10,8 +10,9 @@
 		"typeProperties": {
 			"location": {
 				"type": "AzureBlobStorageLocation",
-				"fileName": "Tab_Leads.csv",
-				"container": "etl-demo"
+				"fileName": "CompanyDataOutput.csv",
+				"folderPath": "models/propensity/inputs",
+				"container": "azureml-blobstore-273ed741-889d-4a3a-ac27-adb39b9318e9"
 			},
 			"columnDelimiter": ",",
 			"escapeChar": "\\",
