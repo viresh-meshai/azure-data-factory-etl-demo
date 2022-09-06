@@ -1,6 +1,116 @@
 {
 	"name": "cfd-data-processing-databricks",
 	"properties": {
-		"annotations": []
-	}
+		"activities": [
+			{
+				"name": "Data Processing",
+				"type": "DatabricksSparkPython",
+				"dependsOn": [
+					{
+						"activity": "Extract Internal Files",
+						"dependencyConditions": [
+							"Succeeded"
+						]
+					},
+					{
+						"activity": "Extract External Files",
+						"dependencyConditions": [
+							"Succeeded"
+						]
+					}
+				],
+				"policy": {
+					"timeout": "7.00:00:00",
+					"retry": 0,
+					"retryIntervalInSeconds": 30,
+					"secureOutput": false,
+					"secureInput": false
+				},
+				"userProperties": [],
+				"typeProperties": {
+					"pythonFile": "dbfs:/tmp/main.py",
+					"parameters": []
+				}
+			},
+			{
+				"name": "Move Data to Cosmos DB",
+				"type": "Copy",
+				"dependsOn": [
+					{
+						"activity": "Model Prediction",
+						"dependencyConditions": [
+							"Succeeded"
+						]
+					}
+				],
+				"policy": {
+					"timeout": "7.00:00:00",
+					"retry": 0,
+					"retryIntervalInSeconds": 30,
+					"secureOutput": false,
+					"secureInput": false
+				},
+				"userProperties": [],
+				"typeProperties": {
+					"source": {
+						"type": "ParquetSource",
+						"storeSettings": {
+							"type": "AzureBlobStorageReadSettings",
+							"recursive": true,
+							"enablePartitionDiscovery": false
+						}
+					},
+					"sink": {
+						"type": "CosmosDbSqlApiSink",
+						"writeBehavior": "insert"
+					},
+					"enableStaging": false
+				}
+			},
+			{
+				"name": "Extract Internal Files",
+				"type": "ExecutePipeline",
+				"dependsOn": [],
+				"userProperties": [],
+				"typeProperties": {
+					"waitOnCompletion": true
+				}
+			},
+			{
+				"name": "Extract External Files",
+				"type": "ExecutePipeline",
+				"dependsOn": [],
+				"userProperties": [],
+				"typeProperties": {
+					"waitOnCompletion": true
+				}
+			},
+			{
+				"name": "Model Prediction",
+				"type": "DatabricksNotebook",
+				"dependsOn": [
+					{
+						"activity": "Data Processing",
+						"dependencyConditions": [
+							"Succeeded"
+						]
+					}
+				],
+				"policy": {
+					"timeout": "0.12:00:00",
+					"retry": 0,
+					"retryIntervalInSeconds": 30,
+					"secureOutput": false,
+					"secureInput": false
+				},
+				"userProperties": [],
+				"typeProperties": {
+					"notebookPath": "/inference"
+				}
+			}
+		],
+		"annotations": [],
+		"lastPublishTime": "2022-08-25T14:23:58Z"
+	},
+	"type": "Microsoft.DataFactory/factories/pipelines"
 }
