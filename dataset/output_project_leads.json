@@ -1,10 +1,6 @@
 {
 	"name": "output_project_leads",
 	"properties": {
-		"linkedServiceName": {
-			"referenceName": "Output SQL Database",
-			"type": "LinkedServiceReference"
-		},
 		"annotations": [],
 		"type": "AzureSqlTable",
 		"schema": [

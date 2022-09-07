@@ -1,10 +1,6 @@
 {
 	"name": "inputGeoData",
 	"properties": {
-		"linkedServiceName": {
-			"referenceName": "Input Blob Storage",
-			"type": "LinkedServiceReference"
-		},
 		"annotations": [],
 		"type": "DelimitedText",
 		"typeProperties": {
