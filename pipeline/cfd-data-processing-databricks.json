@@ -60,10 +60,6 @@
 							"enablePartitionDiscovery": false
 						}
 					},
-					"sink": {
-						"type": "CosmosDbSqlApiSink",
-						"writeBehavior": "insert"
-					},
 					"enableStaging": false
 				}
 			},
@@ -110,6 +106,26 @@
 			},
 			{
 				"name": "Speller Query",
+				"type": "ExecuteWranglingDataflow",
+				"dependsOn": [],
+				"policy": {
+					"timeout": "0.12:00:00",
+					"retry": 0,
+					"retryIntervalInSeconds": 30,
+					"secureOutput": false,
+					"secureInput": false
+				},
+				"userProperties": [],
+				"typeProperties": {
+					"compute": {
+						"coreCount": 8,
+						"computeType": "General"
+					},
+					"queries": []
+				}
+			},
+			{
+				"name": "Speller Query_copy1",
 				"type": "ExecuteWranglingDataflow",
 				"dependsOn": [],
 				"policy": {
