@@ -36,7 +36,7 @@
 				},
 				"userProperties": [],
 				"typeProperties": {
-					"pythonFile": "dbfs://Users/viresh.doshi@mesh-ai.com/scripts_uploaded/company_house_api",
+					"pythonFile": "dbfs://FileStore/tables/Users/viresh.doshi@mesh-ai.com/scripts_uploaded/company_house_api",
 					"parameters": [
 						""
 					]
