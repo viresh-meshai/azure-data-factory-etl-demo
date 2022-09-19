@@ -36,7 +36,7 @@
 				},
 				"userProperties": [],
 				"typeProperties": {
-					"pythonFile": "dbfs:/FileStore/tables/creditcheck-api.py",
+					"pythonFile": "dbfs:/ /FileStore/tables/creditcheck_api.py",
 					"parameters": [
 						""
 					]
