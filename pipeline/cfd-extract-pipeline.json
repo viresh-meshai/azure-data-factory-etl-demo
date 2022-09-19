@@ -36,7 +36,7 @@
 				},
 				"userProperties": [],
 				"typeProperties": {
-					"pythonFile": "dbfs://FileStore/tables/man_upload/credit-check-api-manual",
+					"pythonFile": "dbfs:///FileStore/tables/creditcheck_api.ipynb",
 					"parameters": [
 						""
 					]
