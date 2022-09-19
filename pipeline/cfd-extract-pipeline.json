@@ -32,8 +32,10 @@
 				},
 				"userProperties": [],
 				"typeProperties": {
-					"pythonFile": "dbfs:/FileStore/tables/company_house_api-1.py",
-					"parameters": []
+					"pythonFile": "dbfs://Users/viresh.doshi@mesh-ai.com/scripts_uploaded/company_house_api",
+					"parameters": [
+						""
+					]
 				},
 				"linkedServiceName": {
 					"referenceName": "mlops_dbs_service",
