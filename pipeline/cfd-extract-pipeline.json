@@ -17,6 +17,10 @@
 				"typeProperties": {
 					"functionName": "HttpTrigger1",
 					"method": "GET"
+				},
+				"linkedServiceName": {
+					"referenceName": "AzureFunction1",
+					"type": "LinkedServiceReference"
 				}
 			},
 			{
