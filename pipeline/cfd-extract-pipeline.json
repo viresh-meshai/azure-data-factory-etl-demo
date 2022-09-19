@@ -34,6 +34,10 @@
 				"typeProperties": {
 					"pythonFile": "dbfs:/FileStore/tables/company_house_api-1.py",
 					"parameters": []
+				},
+				"linkedServiceName": {
+					"referenceName": "mlops_dbs_service",
+					"type": "LinkedServiceReference"
 				}
 			}
 		],

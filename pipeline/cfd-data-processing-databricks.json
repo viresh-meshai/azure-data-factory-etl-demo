@@ -30,6 +30,10 @@
 				"typeProperties": {
 					"pythonFile": "dbfs:/tmp/main.py",
 					"parameters": []
+				},
+				"linkedServiceName": {
+					"referenceName": "mlops_dbs_service",
+					"type": "LinkedServiceReference"
 				}
 			},
 			{
@@ -101,7 +105,11 @@
 				},
 				"userProperties": [],
 				"typeProperties": {
-					"notebookPath": "/inference"
+					"notebookPath": "/Users/49b54563-0af3-4386-b3dd-c17d0642ea00/Terraform/mesh-notebook.ipynb"
+				},
+				"linkedServiceName": {
+					"referenceName": "mlops_dbs_service",
+					"type": "LinkedServiceReference"
 				}
 			}
 		],
